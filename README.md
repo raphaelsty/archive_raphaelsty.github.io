@@ -8,9 +8,9 @@ I will illustrate my point with data from the **[M5-Forecasting-Accuracy kaggle 
 
 My goal is not to develop a competitive model, but to show the simplicity of an online learning model for an event-based dataset such as M5-Forecasting-Accuracy.
 
-First of all, I would like to share with you the deployment process I follow when I need to deploy a machine learning algorithm such as the LightGBM model or scikit-learn models in a production environment for a task similar to the M5-Forecasting-Accuracy competition.
+First of all, I would like to share with you the deployment process I follow to deploy a machine learning algorithm such as LightGBM or scikit-learn models for a task similar to the M5-Forecasting-Accuracy competition.
 
-I will then compare this process to **deploying a model** with the Creme and Chantilly libraries.
+I will then compare the deployment of batch learning algorithms to the deployment of online learning algorithms. To do so, I will use the Creme and Chantilly libraries. I'll walk you through the entire process and deploy my [API](http://159.89.191.92:8080) to predict the targets of the Kaggle competition M5-Forecasting-Accuracy.
 
 [Max Halford](https://maxhalford.github.io) is the main developer of Creme and he's the one who initiated the project, he did a blog post **[here](https://towardsdatascience.com/machine-learning-for-streaming-data-with-creme-dacf5fb469df)**. This is a good introduction to the philosophy of online learning and especially Creme philosophy. Feel free to have a look at it if you are interested in the subject.
 
@@ -18,7 +18,7 @@ I will then compare this process to **deploying a model** with the Creme and Cha
 
 ### Model deployment when fitting data in one row:
 
-Deploying a model that learns by batch requires a well-oiled organization. I describe here the process I followed to deploy this kind of algorithm in production. **I would like to point out that we all had different experiences with deploying algorithms in production.** You may not agree with all of the points I'm making. I invite you to share your view in the comments.
+Deploying a model that learns by batch requires a well-oiled organization. I describe here the process I followed to deploy this kind of algorithm in production. **I would like to point out that we all had different experiences with deploying algorithms in production.** You may not agree with all of the points I'm making.
 
 **I distinguish two main steps in the organization of the project when deploying a machine learning algorithm in production:**
 
@@ -30,20 +30,20 @@ Deploying a model that learns by batch requires a well-oiled organization. I des
 
 #### Prototyping:
 
-The first thing to do during the prototyping phase phase is to define a method for evaluating the quality of the model. **Which objective do you want to optimize?** You have to define a validation process now. Usually this is cross-validation. After defining the validation process, the whole point is to find the most suitable model with carefully selected hyperparameters. Without forgetting the feature engineering stage, which is the key to most problems.
+The first thing to do during the prototyping phase phase is to define a method for evaluating the quality of the model. **Which objective do you want to optimize?** Then you have to define a validation process. Usually this is cross-validation. After defining the validation process, the whole point is to find the most suitable model with carefully selected hyperparameters. Without forgetting the feature engineering stage, which is the key to most problems.
 
 The prototyping step is difficult and exciting. We rely on our expertise in the field concerned, our creativity and our scientific culture.
 
 #### Engineering:
 
-It seems interesting to me to choose to deploy the algorithm for predicting product sales behind an API. The API is a practical solution to allow the largest number of users and software to query the trained model.
+It seems interesting to me to choose to deploy the product sales prediction algorithm behind an API. The API is a practical solution to allow the largest number of users and softwares to query the trained model.
 
-During the engineering phase I distinguish two sub-categories modules. The first one is dedicated to the training of the model and its serialization. I call the first set **Offline**. The second one is dedicated to the behavior of the model in the production environment. I call this second part **Online**. I call it "online" because, in my opinion, deploying the model behind an API is an interesting solution here.
+During the engineering phase I distinguish two modules. The first one is dedicated to the training of the model and its serialization. I call the first module **Offline**. The second one is dedicated to the behavior of the model in the production environment. I call this second module **Online**. I call it online because I host this second module in the cloud.
 
 There is a lot of engineering work to ensure consistency between the offline training part and the online inference part. Any transformations that have been applied to the data during training must be applied to the data during the inference phase. This requires the development of code that is different from the training phase, but which produces the same results.
 
 
-The development phase should lead to the creation of different modules:
+The development phase should lead to the creation of different sub-category modules:
 
 **Offline:**
 
@@ -81,11 +81,11 @@ Each Creme model has a ``fit_one`` method. **The ``fit_one`` method allows to up
 
 Creme is not a suitable solution for Kaggle. Learning in batch allows the model to converge faster. **I won't choose Creme to get a medal on Kaggle. However, in everyday life, Creme is a viable and flexible solution for modeling a complex problem**.
 
-In this kernel, I am going to make a tutorial to show how to deploy in production a Creme algorithm trained to predict the target of the M5-Forecasting-Accuracy competition. I'll use the library [Chantilly](https://github.com/creme-ml/chantilly) to deploy my solution in production. Chantilly is a library under development that allows you to easily deploy the models from Creme in production.
+I am going to make a tutorial to show how to deploy in production a Creme algorithm trained to predict the target of the M5-Forecasting-Accuracy competition. I'll use the library [Chantilly](https://github.com/creme-ml/chantilly) to deploy my solution in production. Chantilly is a library under development that allows you to easily deploy the models from Creme in production.
 
 #### Prototyping
 
-As usual, during the prototyping phase, I define the validation process and the metrics used to evaluate the quality of the model I develop. Online learning allows to do **progressive validation** which is the online counterpart of cross-validation. The progressive validation allows to take into account the temporality of the problem. For reasons of simplicity, I choose to use the MAE metric to evaluate the quality of my model.
+As usual, during the prototyping phase, I define the validation process and the measures used to evaluate the quality of the models I develop. Online learning allows to do **progressive validation** which is the online counterpart of cross-validation. The progressive validation allows to take into account the temporality of the problem. For reasons of simplicity, I choose to use the MAE metric to evaluate the quality of my model.
 
 After a few tries on my side, **I choose to train a ``KNNRegressor``  and a ``LinearRegression`` per product** to predict the number of sales. It represents **30490 * 2 models** models. I will choose the best of the two models for each of the products thanks to the validation score.
 
@@ -323,7 +323,7 @@ I initialize my API with flavor regression (see Chantilly tutorial):
 
 ```python
 import requests
-url = 'http://creme-ml.com'
+url = 'http://159.89.191.92:8080'
 ```
 
 ```python
@@ -341,7 +341,7 @@ All the models are now deployed in production and available to make predictions.
 
 ![](static/online_learning.png)
 
-**As you may have noticed, the philosophy of online learning allows to reduce the complexity of the deployment of a machine learning algorithm in production. Moreover, to update the model, we only have to make calls to the API. We don't need to re-train the model from scratch.** To maintain my models on a daily basis, I recommend setting up a script that queries the database that stores the sales made that day. This script would perform 30490 queries every day to update all the models.
+**As you may have noticed, the philosophy of online learning allows to reduce the complexity of the deployment of a machine learning algorithm in production. Moreover, to update the model, we only have to make calls to the API. We don't need to re-train the model from scratch.** To maintain my models on a daily basis, I recommend setting up a script that queries the database that stores the sales made according to the day. This script would perform 30490 queries every day to update all the models.
 
 #### Make a prediction by calling the API:
 
@@ -365,7 +365,7 @@ r = requests.post(f'{url}/api/learn', json={
 
 #### Chantilly dashboard
 
-You can consult the [dashboard](http://creme-ml.com') which is updated in real time and know the performance of your models in live.
+You can consult my dashboard [here](http://159.89.191.92:8080) which is updated in real time. Chantilly allows me to visualize the performance of my models in live when sending new data.
 
 ![](static/dashboard.png)
 
@@ -376,3 +376,5 @@ Feel free to visit the [Chantilly](https://github.com/creme-ml/chantilly) github
 Thank you for reading me.
 
 Raphaël Sourty.
+
+raphael.sourty@gmail.com
